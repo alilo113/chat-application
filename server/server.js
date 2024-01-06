@@ -1,41 +1,32 @@
-const { createServer } = require("http");
-const { Server } = require("socket.io");
+const express = require("express");
+const app = express();
+const port = 3000;
+const mongoose = require("mongoose");
+const message = require("./modules/usersMessages");
+const cors = require("cors"); 
 
-const httpServer = createServer();
-const io = new Server(httpServer, {
-  cors: {
-    origin: "http://localhost:5173",
-    methods: ["GET", "POST"]
+app.use(express.json()); 
+app.use(cors());
+
+mongoose
+  .connect("mongodb://127.0.0.1:27017/messages")
+  .then(() => console.log("Connected to the database"))
+  .catch((err) => console.error("Connection error:", err)); // Add error handling for database connection
+
+app.post("/api/messages", async (req, res) => {
+  try {
+    const { name } = req.body;
+    const newMessage = new message({ Name: name });
+    console.log(newMessage);
+    const savedMessage = await newMessage.save();
+
+    res.status(201).json(savedMessage); // Send a JSON response with the saved message data
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Server error" }); // Handle server error and send an error response
   }
 });
 
-let waitingClients = [];
-
-io.on("connection", (socket) => {
-  console.log("New client connected");
-  waitingClients.push(socket);
-
-  if (waitingClients.length >= 2) {
-    const pair = waitingClients.splice(0, 2);
-    pair.forEach((client, index) => {
-      const partnerIndex = index === 0 ? 1 : 0;
-      client.emit("paired", "You're paired with a stranger!");
-      pair[partnerIndex].emit("paired", "You're paired with a stranger!");
-    });
-  }
-
-  socket.on("chat message", (msg) => {
-    console.log("Received message:", msg);
-    io.emit("chat message", { id: Date.now(), text: msg.text });
-  });
-
-  socket.on("disconnect", () => {
-    console.log("Client disconnected");
-    waitingClients = waitingClients.filter((c) => c !== socket);
-  });
-});
-
-const port = 5000;
-httpServer.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
+app.listen(port, () => {
+  console.log(`The server is listening on port ${port}`);
 });

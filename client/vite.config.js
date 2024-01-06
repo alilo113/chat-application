@@ -7,7 +7,7 @@ export default {
   // Other Vite configurations
   server: {
     proxy: {
-      '/api': 'http://localhost:5000', // Proxy requests to your Express server
+      '/api': 'http://localhost:3000', // Proxy requests to your Express server
     },
   },
 };
