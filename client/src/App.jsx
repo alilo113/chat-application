@@ -1,30 +1,70 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import io from "socket.io-client";
+
+const socket = io("http://localhost:5000");
 
 function App() {
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState([]);
+
+  useEffect(() => {
+    socket.on("connect", () => {
+      console.log("Connected to server");
+    });
+
+    socket.on("paired", (message) => {
+      console.log(message); // Log the paired message
+      // You can set some state to handle the pairing acknowledgment UI if needed
+    });
+
+    socket.on("chat message", (msg) => {
+      console.log("Received message:", msg);
+      setMessages((prevMessages) => [...prevMessages, { id: msg.id, text: msg.text }]);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
+  function handleMessageSubmit(e) {
+    e.preventDefault();
+    if (message.trim()) {
+      console.log("Sending message:", message);
+      socket.emit("chat message", { id: Date.now(), text: message });
+      setMessage("");
+    }
+  }
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <ul id="messages" className="flex-1 overflow-y-auto list-none p-0">
-        {/* Messages will appear here */}
-      </ul>
-      <form
-        id="form"
-        action=""
-        className="bg-opacity-25 bg-black py-1 fixed bottom-0 left-0 right-0 flex items-center"
-      >
+    <div className="min-h-screen bg-gray-100 flex flex-col justify-between">
+      <div className="p-4">
+        <ul id="messages" className="overflow-y-auto list-none p-0">
+          {messages.map((msg) => (
+            <li key={msg.id} className="mb-2">
+              <p className="bg-blue-200 p-2 rounded-lg inline-block">
+                {msg.text}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <form onSubmit={handleMessageSubmit} className="p-4 flex">
         <input
-          id="input"
-          autoComplete="off"
-          className="flex-grow border-none px-4 rounded-full my-1 mx-2 h-10"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="Type a message..."
+          className="flex-grow border border-gray-300 rounded-l py-2 px-4 focus:outline-none focus:border-blue-500"
         />
         <button
           type="submit"
-          className="bg-gray-700 border-none py-1 px-4 rounded focus:outline-none text-white my-1 mx-2"
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r focus:outline-none"
         >
           Send
         </button>
       </form>
     </div>
-  );  
+  );
 }
 
-export default App
+export default App;
