@@ -1,41 +1,72 @@
 const express = require("express");
-const app = express();
-const port = 3000;
+const http = require("http");
 const mongoose = require("mongoose");
-const message = require("./modules/usersMessages");
-const cors = require("cors"); 
-const { createServer } = require('node:http');
-const { join } = require('node:path');
-const { Server } = require('socket.io');
+const cors = require("cors");
+const { Server } = require("socket.io");
 
-app.use(express.json()); 
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  path: "/socket",
+  cors: {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"],
+  },
+});
+
+const port = 3000;
+
+// Middleware
 app.use(cors());
-const server = createServer(app)
-const io = new Server(server)
+app.use(express.json());
 
+// MongoDB Connection
+mongoose.connect("mongodb://127.0.0.1:27017/messages")
+  .then(() => {
+    console.log("Connected to the database");
+  })
+  .catch((err) => {
+    console.error("Connection error:", err);
+    process.exit(1);
+  });
+
+// Socket.IO setup
 io.on("connection", (socket) => {
-  console.log("userConnected")
-})
+  console.log("User connected");
 
-mongoose
-  .connect("mongodb://127.0.0.1:27017/messages")
-  .then(() => console.log("Connected to the database"))
-  .catch((err) => console.error("Connection error:", err)); // Add error handling for database connection
+  socket.on("message", async (newMessage) => {
+    console.log("Received message:", newMessage);
 
+    try {
+      const { Name, Message } = newMessage;
+      const savedMessage = await new Message({ Name, Message }).save();
+
+      // Broadcast the message to all connected clients
+      io.emit("message", savedMessage);
+    } catch (error) {
+      console.error("Error saving message:", error);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected");
+  });
+});
+
+// API Endpoint
 app.post("/api/messages", async (req, res) => {
   try {
-    const { name } = req.body;
-    const newMessage = new message({ Name: name });
-    console.log(newMessage);
-    const savedMessage = await newMessage.save();
+    const { name, message } = req.body;
+    const newMessage = await new Message({ Name: name, Message: message }).save();
 
-    res.status(201).json(savedMessage); // Send a JSON response with the saved message data
+    res.status(201).json(newMessage);
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: "Server error" }); // Handle server error and send an error response
+    console.error("Error saving message:", error);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
-app.listen(port, () => {
-  console.log(`The server is listening on port ${port}`);
+// Start the server
+server.listen(port, () => {
+  console.log(`Server is listening on port ${port}`);
 });

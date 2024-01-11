@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import io from "socket.io-client";
 
-const socket = io("http://localhost:3000"); // Connect to your server
+const socket = io("http://localhost:3000", { path: "/socket" });
 
 export function ChatRoom() {
   const [messages, setMessages] = useState([]);
@@ -17,11 +17,11 @@ export function ChatRoom() {
     return () => {
       socket.disconnect();
     };
-  }, []); // Run only once when the component mounts
+  }, []);
 
   const sendMessage = () => {
     // Send the message to the server
-    socket.emit("message", inputMessage);
+    socket.emit("message", { Name: "Your Name", Message: inputMessage });
 
     // Clear the input field
     setInputMessage("");
@@ -32,7 +32,9 @@ export function ChatRoom() {
       <div className="bg-white shadow-md rounded px-8 py-6 mb-auto">
         {/* Display messages here */}
         {messages.map((msg, index) => (
-          <div key={index}>{msg.Name}</div>
+          <div key={index}>
+            <strong>{msg.Name}:</strong> {msg.Message}
+          </div>
         ))}
       </div>
       <div className="flex items-center mt-auto mb-3">
