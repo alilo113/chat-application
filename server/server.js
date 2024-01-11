@@ -4,9 +4,18 @@ const port = 3000;
 const mongoose = require("mongoose");
 const message = require("./modules/usersMessages");
 const cors = require("cors"); 
+const { createServer } = require('node:http');
+const { join } = require('node:path');
+const { Server } = require('socket.io');
 
 app.use(express.json()); 
 app.use(cors());
+const server = createServer(app)
+const io = new Server(server)
+
+io.on("connection", (socket) => {
+  console.log("userConnected")
+})
 
 mongoose
   .connect("mongodb://127.0.0.1:27017/messages")

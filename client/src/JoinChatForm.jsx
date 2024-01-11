@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { useNavigation } from "react-router-dom"
 
 export function JoinChatForm() {
   const [name, setName] = useState("");
@@ -9,7 +10,7 @@ export function JoinChatForm() {
       const response = await axios.post("http://localhost:3000/api/messages", {
         name: name,
       });
-      console.log(`Successfully added ${name} to the database!`);
+      console.log(`Successfully added ${name} to the database!`);setName
       setName("");
     } catch (error) {
       console.error("Error:", error.message);
