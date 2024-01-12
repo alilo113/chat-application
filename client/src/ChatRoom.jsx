@@ -8,36 +8,34 @@ export function ChatRoom() {
   const [inputMessage, setInputMessage] = useState("");
 
   useEffect(() => {
-    // Listen for incoming messages
     socket.on("message", (newMessage) => {
       setMessages((prevMessages) => [...prevMessages, newMessage]);
     });
 
-    // Clean up the socket connection when the component unmounts
     return () => {
-      socket.disconnect();
+      socket.off("message");
     };
   }, []);
 
-  const sendMessage = () => {
-    // Send the message to the server
-    socket.emit("message", { Name: "Your Name", Message: inputMessage });
-
-    // Clear the input field
-    setInputMessage("");
-  };
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (inputMessage) {
+      socket.emit("message", { text: inputMessage }); // Assuming text-based message
+      setInputMessage("");
+    }
+  }
 
   return (
     <div className="flex flex-col h-screen">
       <div className="bg-white shadow-md rounded px-8 py-6 mb-auto">
-        {/* Display messages here */}
         {messages.map((msg, index) => (
           <div key={index}>
-            <strong>{msg.Name}:</strong> {msg.Message}
+            <strong>{msg.Name}:</strong> {msg.text}
+            {msg.image && <img src={msg.image} alt="Received Image" />}
           </div>
         ))}
       </div>
-      <div className="flex items-center mt-auto mb-3">
+      <form className="flex items-center mt-auto mb-3" onSubmit={handleSubmit}>
         <input
           type="text"
           value={inputMessage}
@@ -46,12 +44,12 @@ export function ChatRoom() {
           placeholder="Type your message..."
         />
         <button
-          onClick={sendMessage}
+          type="submit"
           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-6 ml-4 rounded focus:outline-none focus:shadow-outline"
         >
           Send
         </button>
-      </div>
+      </form>
     </div>
   );
 }
