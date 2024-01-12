@@ -9,6 +9,7 @@ export function ChatRoom() {
 
   useEffect(() => {
     socket.on("message", (newMessage) => {
+      console.log("Received message:", newMessage);
       setMessages((prevMessages) => [...prevMessages, newMessage]);
     });
 
@@ -20,18 +21,21 @@ export function ChatRoom() {
   function handleSubmit(e) {
     e.preventDefault();
     if (inputMessage) {
-      socket.emit("message", { text: inputMessage }); // Assuming text-based message
+      // Replace this with the actual logic to retrieve the sender's name
+      const senderName = "me"; // Replace with the actual sender's name
+
+      // Emit the "message" event to the server with the sender's name
+      socket.emit("message", { sender: senderName, text: inputMessage });
       setInputMessage("");
     }
   }
 
   return (
     <div className="flex flex-col h-screen">
-      <div className="bg-white shadow-md rounded px-8 py-6 mb-auto">
+      <div className="m-2">
         {messages.map((msg, index) => (
           <div key={index}>
-            <strong>{msg.Name}:</strong> {msg.text}
-            {msg.image && <img src={msg.image} alt="Received Image" />}
+            <strong>{msg.text}</strong>
           </div>
         ))}
       </div>

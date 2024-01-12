@@ -1,8 +1,13 @@
-const mongoose = require("mongoose")
+// Server-side message model
+const mongoose = require("mongoose");
 
 const messageSchema = new mongoose.Schema({
-    Name: String,
-})
+  sender: String,
+  receiver: String,
+  text: String,
+  name: String
+});
 
-const message = mongoose.model("message", messageSchema)
-module.exports = message
+const Message = mongoose.model("Message", messageSchema);
+
+module.exports = Message;
